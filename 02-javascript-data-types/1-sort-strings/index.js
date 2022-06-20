@@ -6,4 +6,15 @@
  */
 export function sortStrings(arr, param = 'asc') {
 
+    const customComparsion = (char1, char2) => {
+        if (param === "desc") {
+            [char1, char2] = [char2, char1];
+        }
+
+        return char1.localeCompare(char2, ['ru', 'en'], {
+            caseFirst: 'upper'
+        });
+    };
+
+    return [...arr].sort(customComparsion);
 }

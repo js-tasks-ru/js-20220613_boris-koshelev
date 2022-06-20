@@ -4,6 +4,22 @@
  * @param {...string} fields - the properties paths to omit
  * @returns {object} - returns the new object
  */
-export const omit = (obj, ...fields) => {
 
+const pipe = (args, [firstFunc, ...otherFuncs]) => {
+    let result = firstFunc(...args);
+    otherFuncs.forEach((func) => {
+        result = func(result);
+    });
+    return result;
+};
+
+export const omit = (obj, ...fields) => {
+    return pipe(
+        [obj],
+        [
+            Object.entries,
+            (allFields) => allFields.filter(([key]) => fields.includes(key) === false),
+            Object.fromEntries,
+        ]
+    );
 };
