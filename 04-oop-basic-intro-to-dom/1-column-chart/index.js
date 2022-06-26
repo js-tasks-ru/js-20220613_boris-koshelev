@@ -1,14 +1,3 @@
-function getColumnProps(data) {
-  const maxValue = Math.max(...data);
-  const scale = 50 / maxValue;
-
-  return data.map((item) => {
-    return {
-      percent: ((item / maxValue) * 100).toFixed(0) + "%",
-      value: String(Math.floor(item * scale)),
-    };
-  });
-}
 
 export default class ColumnChart {
   element = null;
@@ -44,15 +33,15 @@ export default class ColumnChart {
   }
 
   destroy() {
-    this.element.innerHTML = "";
+    this.remove();
   }
 
   remove() {
-    this.element.parentElement.removeChild(this.element);
+    this.element.remove();
   }
 
   getColumns() {
-    const columnProps = getColumnProps(this.data);
+    const columnProps = this.getColumnProps(this.data);
     return columnProps
       .map(({ value, percent }) => {
         return `<div style="--value: ${value}" data-tooltip="${percent}"></div>`;
@@ -88,6 +77,18 @@ export default class ColumnChart {
     const tempElement = document.createElement("div");
     const displaySkeleton = this.data.length === 0;
     tempElement.innerHTML = this.getTemplate({ displaySkeleton });
-    this.element = tempElement.children[0];
+    this.element = tempElement.firstElementChild;
+  }
+
+  getColumnProps(data) {
+    const maxValue = Math.max(...data);
+    const scale = this.chartHeight / maxValue;
+
+    return data.map((item) => {
+      return {
+        percent: ((item / maxValue) * 100).toFixed(0) + "%",
+        value: String(Math.floor(item * scale)),
+      };
+    });
   }
 }
