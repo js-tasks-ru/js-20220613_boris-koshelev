@@ -101,7 +101,7 @@ export default class SortableTable {
       this.sort(this.sorted.id, this.sorted.order);
     }
 
-    this.subElements.header.addEventListener("pointerdown", handleHeaderCellClick);
+    this.subElements.header.addEventListener("pointerdown", this.handleHeaderCellClick);
 
 
   }
@@ -164,7 +164,7 @@ export default class SortableTable {
   destroy() {
     this.remove();
     this.element = null;
-    this.subElements.header.removeEventListener("pointerdown", handleHeaderCellClick);
+    this.subElements.header?.removeEventListener("pointerdown", this.handleHeaderCellClick);
     this.subElements = {};
   }
 }
