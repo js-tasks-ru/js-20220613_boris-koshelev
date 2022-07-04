@@ -27,5 +27,3 @@ export function trimSymbols(string, size) {
     }
     return result;
 }
-
-console.log(trimSymbols('xxxaaxx', 1));
