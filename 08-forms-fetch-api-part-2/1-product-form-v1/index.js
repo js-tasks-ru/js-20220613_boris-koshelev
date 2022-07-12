@@ -9,24 +9,23 @@ export default class ProductForm {
     this.mode = productId ? "update" : "add";
   }
 
-  initEmptyForm = async () => {
+  async initEmptyForm() {
     const categoriesData = await this.loadCategoriesData();
     this.categoriesData = categoriesData;
 
     this.updateSubCategoryList();
-  };
+  }
 
-  initFillForm = async () => {
-    const categoriesData = await this.loadCategoriesData();
-    const productData = await this.loadProductData();
+  async initFillForm() {
+    const [categoriesData, productData] = await Promise.all([this.loadCategoriesData(), this.loadProductData()]);
 
     this.productData = productData[0];
     this.categoriesData = categoriesData;
 
     this.updateForm();
-  };
+  }
 
-  updateForm = () => {
+  updateForm() {
     this.subElements.productForm.elements["title"].value =
       this.productData.title;
     this.subElements.productForm.elements["description"].value =
@@ -49,9 +48,9 @@ export default class ProductForm {
 
     this.updateSubCategoryList();
     this.updateImageList();
-  };
+  }
 
-  updateImageList = () => {
+  updateImageList() {
     this.subElements.imageListContainer.innerHTML = `
         <ul class="sortable-list">
         ${this.productData.images
@@ -85,9 +84,9 @@ export default class ProductForm {
         .join("")}
         </ul>
         `;
-  };
+  }
 
-  updateSubCategoryList = () => {
+  updateSubCategoryList() {
     this.subElements.productForm.elements["subcategory"].innerHTML =
       this.categoriesData
         .map(({ subcategories, title: categoryTitle }) => {
@@ -97,24 +96,24 @@ export default class ProductForm {
         })
         .flat()
         .join("");
-  };
+  }
 
-  loadProductData = async () => {
+  async loadProductData() {
     const url = new URL("/api/rest/products", BACKEND_URL);
     url.searchParams.set("id", this.productId);
 
     return await fetchJson(url);
-  };
+  }
 
-  loadCategoriesData = async () => {
+  async loadCategoriesData() {
     const url = new URL("/api/rest/categories", BACKEND_URL);
     url.searchParams.set("_sort", "weight");
     url.searchParams.set("_refs", "subcategory");
 
     return await fetchJson(url);
-  };
+  }
 
-  addNewImage = async (formData) => {
+  async addNewImage(formData) {
     const url = new URL("https://api.imgur.com/3/image");
 
     return await fetchJson(url, {
@@ -124,7 +123,21 @@ export default class ProductForm {
       },
       body: formData,
     });
-  };
+  }
+
+  async createNewProduct(data) {
+    await fetchJson("https://course-js.javascript.ru/api/rest/products", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProduct(data) {
+    await fetchJson("https://course-js.javascript.ru/api/rest/products", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
 
   get template() {
     return /* HTML */ `
@@ -272,7 +285,7 @@ export default class ProductForm {
     this.subElements = {};
   }
 
-  save = async () => {
+  async save() {
     let formData = new FormData(this.subElements.productForm);
 
     const newProductData = {
@@ -297,15 +310,12 @@ export default class ProductForm {
       });
     }
 
-    await fetchJson("https://course-js.javascript.ru/api/rest/products", {
-      method: "PATCH",
-      body: JSON.stringify(newProductData),
-    });
+    await this.updateProduct(newProductData);
 
     this.element.dispatchEvent(new CustomEvent("product-updated", {}));
-  };
+  }
 
-  add = async () => {
+  async add() {
     let formData = new FormData(this.subElements.productForm);
 
     const newProductData = {
@@ -329,61 +339,63 @@ export default class ProductForm {
       });
     }
 
-    await fetchJson("https://course-js.javascript.ru/api/rest/products", {
-      method: "PUT",
-      body: JSON.stringify(newProductData),
-    });
+    await this.createNewProduct(newProductData);
 
     this.element.dispatchEvent(new CustomEvent("product-saved", {}));
-  };
+  }
 
-  addEvents = () => {
-    this.subElements.imageListContainer.addEventListener("click", (event) => {
-      if (event.target.closest("button")) {
-        const currentUrl = event.target.closest("li").children[0].value;
-        this.productData.images = this.productData.images.filter(({ url }) => {
-          return currentUrl !== url;
-        });
-        this.updateImageList();
-      }
-    });
-
-    const formElement = this.subElements.productForm.elements;
-
-    formElement["uploadImage"].addEventListener("click", async () => {
-      const [fileHandle] = await window.showOpenFilePicker({
-        types: [
-          {
-            description: "Images",
-            accept: {
-              "image/*": [".png", ".gif", ".jpeg", ".jpg"],
-            },
-          },
-        ],
-        excludeAcceptAllOption: true,
-        multiple: false,
-      });
-      const file = await fileHandle.getFile();
-
-      const formdata = new FormData();
-      formdata.append("image", file);
-
-      const response = await this.addNewImage(formdata);
-
-      this.productData.images.push({
-        source: file.name,
-        url: response.data.link,
+  handleClickRemoveImage = (event) => {
+    if (event.target.closest("button")) {
+      const currentUrl = event.target.closest("li").children[0].value;
+      this.productData.images = this.productData.images.filter(({ url }) => {
+        return currentUrl !== url;
       });
       this.updateImageList();
-    });
+    }
+  }
 
-    this.subElements.productForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (this.mode === "add") {
-        this.add();
-      } else {
-        this.save();
-      }
+  handleClickLoadNewImage = async () => {
+    const [fileHandle] = await window.showOpenFilePicker({
+      types: [
+        {
+          description: "Images",
+          accept: {
+            "image/*": [".png", ".gif", ".jpeg", ".jpg"],
+          },
+        },
+      ],
+      excludeAcceptAllOption: true,
+      multiple: false,
     });
+    const file = await fileHandle.getFile();
+
+    const formdata = new FormData();
+    formdata.append("image", file);
+
+    const response = await this.addNewImage(formdata);
+
+    this.productData.images.push({
+      source: file.name,
+      url: response.data.link,
+    });
+    this.updateImageList();
+  }
+
+  handleClickSumbit = (event) => {
+    event.preventDefault();
+    if (this.mode === "add") {
+      this.add();
+    } else {
+      this.save();
+    }
+  }
+
+  addEvents = () => {
+    this.subElements.imageListContainer.addEventListener("click", this.handleClickRemoveImage);
+
+    const formElement = this.subElements.productForm.elements;
+    formElement["uploadImage"].addEventListener("click", this.handleClickLoadNewImage);
+
+    this.subElements.productForm.addEventListener("submit", this.handleClickSumbit);
   };
 }

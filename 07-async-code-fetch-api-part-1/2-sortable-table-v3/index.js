@@ -96,7 +96,7 @@ export default class SortableTable {
     }
   }
 
-  render = async () => {
+  async render() {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = this.template;
     this.element = wrapper.firstElementChild;
@@ -107,7 +107,7 @@ export default class SortableTable {
     await this.updateData();
   }
 
-  rerenderTable = () => {
+  rerenderTable() {
     this.subElements.body.innerHTML = this.getTableRows(this.data);
   }
 
@@ -192,14 +192,14 @@ export default class SortableTable {
     this.subElements = {};
   }
 
-  updateData = async () => {
+  async updateData() {
     this.element.classList.add("sortable-table_loading");
     this.data = await this.getData();
     this.element.classList.remove("sortable-table_loading");
     this.rerenderTable();
   }
 
-  getData = async ({ id, order } = {}) => {
+  async getData({ id, order } = {}) {
     const url = new URL(this.url, BACKEND_URL);
 
     if (id) {

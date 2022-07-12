@@ -100,15 +100,14 @@ export default class ColumnChart {
     }
 
     getData = async () => {
-        const response = await fetch(BACKEND_URL + "/" + this.url + "?" + new URLSearchParams({
-            from: this.range.from.toISOString(),
-            to: this.range.to.toISOString()
-        }));
-        const data = await response.json();
-        return data;
+        const url = new URL(this.url, BACKEND_URL);
+        url.searchParams.set("from", this.range.from.toISOString());
+        url.searchParams.set("to", this.range.to.toISOString());
+
+        return await fetchJson(url);
     }
 
-    updateData = async () => {
+    async updateData() {
         this.element.classList.add("column-chart_loading");
         const data = await this.getData();
 
